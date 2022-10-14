@@ -1,4 +1,7 @@
 Making diffusion maps with Slingshot
+
+http://barcwiki.wi.mit.edu/wiki/SOP/scRNA-seq/Slingshot
+
 You can either assigned cells to clusters based on ​| Slingshot protocol or make a single cell object, i.e. from the Seurat object.
 
 Example commands for convert to single cell object from Seurat.
