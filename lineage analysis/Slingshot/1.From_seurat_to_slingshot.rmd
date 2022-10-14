@@ -1,0 +1,59 @@
+Making diffusion maps with Slingshot
+You can either assigned cells to clusters based on ​| Slingshot protocol or make a single cell object, i.e. from the Seurat object.
+
+Example commands for convert to single cell object from Seurat.
+
+Making a single cell object from a Seurat object
+library(Seurat) 
+library(SingleCellExperiment)
+sce <- as.SingleCellExperiment(seuratObject)
+#this has the cell classification
+table(sce$ident)
+Calculate pseudotime and lineages with Slingshot
+You can use either PCA/UMAP/TSNE for reduction. Since Slingshot is designed for cases in which cells fall along a continuous trajectory, it's better to use PCA if clearly discrete clusters presented in UMAP, as mentioned in ​| Slingshot github page
+
+sce <- slingshot(sce, clusterLabels = ident, reducedDim = "PCA",
+                      allow.breaks = FALSE)
+# get the lineages:
+lnes <- getLineages(reducedDim(sce,"PCA"), sce$ident)
+lnes@lineages
+
+If you know the which cluster is the origin ( last cluster), you can assign starting cluster/last cluster:
+
+sce <- slingshot(sce, clusterLabels = ident, reducedDim = "PCA",
+                      allow.breaks = FALSE, start.clus="2")
+# get the lineages:
+lnes <- getLineages(reducedDim(sce2,"PCA"),
+                    sce2$ident, start.clus = "2")
+lnes@lineages
+Visualize the pseudotime or lineages
+You can draw plot with first pseudotime as x-axis, and y-axis is the cell type. If you have multiple lineages, cells that were identified as being specific to Lineage 2 will have NA values for slingPseudotime_1 ( ​| slingshot github page )
+
+library(Polychrome)
+library(ggbeeswarm)
+library(ggthemes)
+
+# this define the cluster color. You can change it with different color scheme.
+my_color <- createPalette(length(levels(sce$ident)), c("#010101", "#ff0000"), M=1000)
+names(my_color) <- unique(as.character(sce$ident))
+
+slingshot_df <- data.frame(colData(sce))
+
+# re-order y-axis for better figure: This should be tailored with your own cluster names
+# slingshot_df$ident = factor(slingshot_df$ident, levels=c(4,2,1,0,3,5,6))
+
+ggplot(slingshot_df, aes(x = slingPseudotime_1, y = ident, 
+                              colour = ident)) +
+    geom_quasirandom(groupOnX = FALSE) + theme_classic() +
+    xlab("First Slingshot pseudotime") + ylab("cell type") +
+    ggtitle("Cells ordered by Slingshot pseudotime")+scale_colour_manual(values = my_color)
+
+
+To plot lineages along the cells in PCAs:
+
+plot(reducedDims(sce)$PCA, col = my_color[as.character(sce$ident)], 
+     pch=16, 
+     asp = 1)
+legend("bottomleft",legend = names(my_color[levels(sce$ident)]),  
+       fill = my_color[levels(sce$ident)])
+lines(SlingshotDataSet(lnes), lwd=2, type = 'lineages', col = c("black"))
